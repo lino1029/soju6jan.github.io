@@ -177,9 +177,11 @@ function download() {
 	);
 	$data = get_html($url2,  $headers);
 
-    $url3 = 'http://www.filetender.com'.explode('"', explode('<a href="', explode('download_area', $data)[1])[1])[0];
+    //$url3 = 'http://www.filetender.com'.explode('"', explode('<a href="', explode('download_area', $data)[1])[1])[0];
+	$url3 = 'http://www.filetender.com/'.explode("'", explode("var newUrl = '", $data)[1])[0];
+	$query = 'key='.explode('"', explode('value="', explode('name="key"', $data)[1])[1])[0];
 	$headers[0] = 'Referer: '.$url2;
-	$data = get_html($url3,  $headers );
+	$data = get_html2($url3,  $headers, $query);
 	echo $data;
 }
 
@@ -225,6 +227,22 @@ function get_html($url, $headers) {
 	curl_setopt($ch, CURLOPT_HEADER, 0);
 	curl_setopt($ch, CURLOPT_COOKIEJAR, 'cookies.txt');
 	curl_setopt($ch, CURLOPT_COOKIEFILE, 'cookies.txt');
+	$data = curl_exec($ch);
+	return $data;
+}
+
+function get_html2($url, $headers, $query) {
+	$ch = curl_init();
+	curl_setopt($ch, CURLOPT_URL, $url);
+	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+	curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+	curl_setopt($ch, CURLOPT_HEADER, 0);
+	curl_setopt($ch, CURLOPT_COOKIEJAR, 'cookies.txt');
+	curl_setopt($ch, CURLOPT_COOKIEFILE, 'cookies.txt');
+	curl_setopt($ch, CURLOPT_POST, 1);
+	curl_setopt($ch, CURLOPT_POSTFIELDS, $query);
 	$data = curl_exec($ch);
 	return $data;
 }
