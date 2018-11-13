@@ -99,6 +99,7 @@ function make_rss($url){
 	if ($sj_download_mode == '') $sj_download_mode = 'torrent';
 
 	for($page = 1 ; $page <= $sj_page ; $page++) {
+		$url = $url.'&page='.$page;
 		$data = get_html($url, $headers);
 		$data = str_replace("</span>","",str_replace("<span class='sc_font'>","",str_replace("stitle1","stitle",str_replace("stitle2","stitle",str_replace("stitle3","stitle",str_replace("stitle4","stitle",str_replace("stitle5","stitle",str_replace("<tr class=\"bgcolor\">","<tr >",$data))))))));
 		$data = explode("<tr >", $data);
