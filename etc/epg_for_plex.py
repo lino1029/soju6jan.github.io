@@ -82,7 +82,6 @@ def insert_episode_num(root):
 
 
 def get_daum_poster(str):
-	return None
 	try:
 		url = 'https://search.daum.net/search?w=tv&q=%s' % (urllib.quote(str.encode('utf8')))
 		request = urllib2.Request(url)
