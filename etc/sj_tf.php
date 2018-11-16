@@ -224,6 +224,7 @@ function download() {
     //$url3 = 'http://www.filetender.com'.explode('"', explode('<a href="', explode('download_area', $data)[1])[1])[0];
 	$url3 = 'http://www.filetender.com/'.explode("'", explode("var newUrl = '", $data)[1])[0];
 	$query = 'key='.explode('"', explode('value="', explode('name="key"', $data)[1])[1])[0];
+	$query = $query.'&table='.explode('"', explode('value="', explode('name="table"', $data)[1])[1])[0];
 	$headers[0] = 'Referer: '.$url2;
 	$data = get_html2($url3,  $headers, $query);
 	echo $data;
@@ -311,4 +312,3 @@ function endsWith($haystack, $needle)
     return (substr($haystack, -$length) === $needle);
 }
 ?>
-
