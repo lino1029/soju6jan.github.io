@@ -1,24 +1,25 @@
 <?php
 /*
+<배경>
 고기상자님 코드를 바탕으로 자막 파일만 받는 것만 했었다.
 영화만 이 파일로 받고, 영화 이외에는 다른 분들이 업데이트해주시는 것으로 사용했으나
 사이트가 자꾸 변경되어 여러 개를 같이 고쳐야 하기에 이 파일로 티프리카 모두 적용하는 것으로 변경한다.
 
+
 <사용법>
 1. 일반적인 사용법 
- 티프리카 파라미터 
+ 1) 티프리카 파라미터 
 	티프리카를 브라우저로 열어서 주소창에 있는 b_id와 sc 또는 ca 값을 그대로 사용한다. mode=list, x, y 생략
 	- b_id : 게시판 이름
 	- sc : 검색어
 	- ca : 카테고리
-
-전용 파라미터
+ 2) 전용 파라미터
 	- sj_page	값 : 숫자	생략시 : 1
 		탐색할 최대 페이지 값. 1이면 첫 페이지만, 이외는 지정된 페이지까지.
 
 	- sj_download_mode  값: magnet / torrent		생략시: torrent
 		filetender를 거치지 않고 마그넷을 반환
-		
+
 사용예) sj_page를 넣지 않을 경우 쿼리가 동일하다
 드라마 720-next 검색시 
 브라우저 주소창 : http://www.tfreeca22.com/board.php?b_id=tdrama&mode=list&sc=720p-next&x=40&y=22
@@ -28,15 +29,19 @@
 브라우저 주소창 : http://www.tfreeca22.com/board.php?mode=list&b_id=tdrama&ca=미드
 => http://자신의서버주소/sj_tf.php?b_id=tdrama&&ca=미드
 
+다운로드 모드시 마그넷으로 받기
+드라마 720-next
+=> http://자신의서버주소/sj_tf.php?b_id=tdrama&sc=720p-next&sj_download_mode=magnet
+
+
 
 2. 모든파일 다운로드(자막)
-전용 파라미터
-	- sj_all	값 : off / on / dummy	생략시 off
-		off이면 하나의 파일만, on이면 게시물에 있는 모든 파일을 받는다.
-		영화나 애니에서 자막파일까지 받을 때 사용한다.
-		on이면 파일 개수만큼 링크를 만들어야 하기에 오래 걸린다.
+ 1) sj_all	값 : off / on / dummy	생략시 off
+	off이면 하나의 파일만, on이면 게시물에 있는 모든 파일을 받는다.
+	영화나 애니에서 자막파일까지 받을 때 사용한다.
+	on이면 파일 개수만큼 링크를 만들어야 하기에 오래 걸린다.
 
-* sj_all=on 일때
+ 2) sj_all=on 일때
 	- sj_all_movie_only_1080p : on / off	생략시 off
 		내가 필요해서 만들었다. 영화 탐색 시 1080p, 720p 토렌트 파일이 모두 존재할 때 720p 파일을 목록에서 제외한다.
 
@@ -51,12 +56,17 @@
 	- sj_except_no_sub : on / off  생략시 off
 		on일경우 무자막으로 나와있는 게시물은 받지 않는다
 
-*sj_all=dummy
-	- sj_all=dummy
-		위의 경우 갱신 시 타임아웃 걸릴 가능성도 있고, 한꺼번에 게시물이 올라올 경우 놓칠 수도 있다. 
-		이를 피하기 위해 목록을 넘길 때는 dummy로 한 게시물당 4개씩 고정적으로 넘긴다. 다운로드 시에는 각 인덱스별로 파일을 받게된다.
-		이 방법으로 할 경우에는 sj_all_movie_only_1080p 이 사용할 수가 없고, 한국영화 같이 한 게시물당 파일이 하나만 있을 경우 3개는 필요가 없어서
-		0byte 짜리 sj_tf.php 파일이 계속 쌓이게 된다.
+ 3) sj_all=dummy 일때
+	sj_all=on인 경우 갱신 시 타임아웃 걸릴 가능성도 있고, 한꺼번에 게시물이 올라올 경우 놓칠 수도 있다. 
+	이를 피하기 위해 목록을 넘길 때는 dummy로 한 게시물당 4개씩 고정적으로 넘긴다. 다운로드 시에는 각 인덱스별로 파일을 받게된다.
+	이 방법으로 할 경우에는 sj_all_movie_only_1080p 이 사용할 수가 없고, 한국영화 같이 한 게시물당 파일이 하나만 있을 경우 3개는 필요가 없어서
+	0byte 짜리 sj_tf.php 파일이 계속 쌓이게 된다.
+ 
+ 4) sj_all=on_magnet 
+	각 페이지 첫번째 마그넷을 리스트에 포함하여 반환한다. sj_download_mode=magnet은 첫번째 RSS 리스트에 이 페이지 주소가 들어간 후,
+	실제 다운로드 받을려고 다시 연결할 때 마그넷을 넘긴다.
+	sj_all=on_magnet 은 RSS 목록 요청시에 미리 마그넷 정보를 포함하는 방식이다
+
 
 각 방식의 차이가 있으니 선택적으로 사용하기 바라며, 이를 회피하기 위해서는 미리 주기적으로 xml 파일을 만들어 놓고 이 고정 파일을 등록해서 
 사용하는 방법이 가장 좋겠으나, 스케줄러 세팅하는 것도 또 귀찮은 일이다.
@@ -70,27 +80,58 @@
 http://자신의서버주소/tfreeca/sj_tf.php?b_id=tmovie&sj_all=on&sj_all_movie_only_1080p=on
 http://자신의서버주소/tfreeca/sj_tf.php?b_id=tmovie&sj_all=on&sj_all_movie_only_1080p=on&sj_all_max=20
 http://자신의서버주소/tfreeca/sj_tf.php?b_id=tmovie&sj_all=dummy
+
+
+3. DLM
+ 다운로드 : https://github.com/soju6jan/soju6jan.github.io/tree/master/etc
+
+ 미리 만들어 놓은 2개의 DLM 있다.
+ sj_tf_tv.dlm은 국내방송을, sj_tf_movie.dlm은 sj_all=on 모드로 검색하여 자막까지 표시되며, 
+ sj_tf 파일이 web/tfreeca/ 폴더 아래에 있다는 가정하에 작성되어 있다.
+ php 경로변경이 필요하거나 다른 게시판을 이용하려면 직접 수정한 후 dlm을 생성하면 된다.
+
+ 1) 압축풀기
+ tar zxf sj_tf_tv.dlm
+ 하면 INFO search.php 파일이 나온다
+ 
+ 2) 압축하기
+ tar zcf sj_tf_my.dlm INFO search.php
+
+ 3) 수정방법
+  - info 파일에서 sj_tf_tv => sj_tf_my
+  - search.php 파일에서 class 이름과 원하는 쿼리 변경
+
 */
+
 $SITE = 'http://www.tfreeca22.com';
 $m = $_GET["sj_mode"];
 if ( $m == 'd' ) {
-	if ($_GET["sj_download_mode"] == 'magnet') download_magnet();
+	if ($_GET["sj_download_mode"] == 'magnet') redirect_magnet();
 	else download();
 } else {
 	global $SITE;
 	$query = '';
 	foreach($_GET as $key => $value) if (startsWith($key, 'sj_') == false) $query = $query.'&'.$key.'='.$value;
-	$url = $SITE.'/board.php?mode=list'.$query;
-	$xml = make_rss($url);
-	echo str_replace("&","&amp;",$xml);
+
+	$ret = "<rss xmlns:showrss=\"http://showrss.info/\" version=\"2.0\"><channel><title>".$_GET["b_id"].' '.$_GET["sc"]."</title><description>sj_tf</description>";
+	if ($_GET["b_id"] == null) {
+		$board_list = array('tdrama', 'tent', 'tv');
+		foreach($board_list as $b_id) {
+			$url = $SITE.'/board.php?mode=list'.$query.'&b_id='.$b_id;
+			$ret = make_rss($url, $ret);
+		}
+	} else {
+		$url = $SITE.'/board.php?mode=list'.$query;
+		$ret = make_rss($url, $ret);
+	}
+	$ret = $ret."</channel></rss>";
+	header("Content-Type: application/xml");
+	echo str_replace("&","&amp;",$ret);
 }
 
-function make_rss($url){
+function make_rss($url, $ret){
 	global $SITE;
-	header("Content-Type: application/xml");
-	$ret = "<rss xmlns:showrss=\"http://showrss.info/\" version=\"2.0\"><channel><title></title><link></link><description></description>";
 	$headers = array('Cookie: uuoobe=on;');
-
 	$sj_page = $_GET["sj_page"];
 	if ($sj_page == '') $sj_page = 1;
 	$sj_all_max = $_GET["sj_all_max"];
@@ -130,23 +171,25 @@ function make_rss($url){
 					$filename = substr($attachs[$x], strpos($attachs[$x], '>')+1, strpos($attachs[$x] , '<')-strpos($attachs[$x], '>')-1);
 					$l = explode("\"",$attachs[$x])[0];
 					if ( $filename != '' ) {
-						$ret = $ret."<item><title>".$filename."</title><link>http://".$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF']."?" . $view . "&sj_mode=d&sj_download_mode=".$sj_download_mode."&sj_filename=".$filename."&sj_filetender=".$l."</link><description></description><showrss:showid></showrss:showid><showrss:showname>".$title."</showrss:showname></item>";
+						$ret = $ret."<item><title>".$filename."</title><link>http://".$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF']."?" . $view . "&sj_mode=d&sj_download_mode=".$sj_download_mode."&sj_filename=".$filename."&sj_filetender=".$l."</link></item>";
 					}
 				}
 				$count++;
 				if ($sj_all_max != -1 && $count > $sj_all_max) break;
 			} else if ( $_GET["sj_all"] == 'dummy') {
 				for($idx = 0 ; $idx < 4 ; $idx++) {
-					$ret = $ret."<item><title>".$title."</title><link>http://".$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF']."?" . $view . "&sj_mode=d&sj_download_mode=".$sj_download_mode."&sj_idx=".$idx."</link><description></description><showrss:showid></showrss:showid><showrss:showname>".$title."</showrss:showname></item>";
+					$ret = $ret."<item><title>".$title."</title><link>http://".$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF']."?" . $view . "&sj_mode=d&sj_download_mode=".$sj_download_mode."&sj_idx=".$idx."</link></item>";
 				}
+			} else if ( $_GET["sj_all"] == 'on_magnet') {
+				$ret = $ret."<item><title>".$title."</title><link>".get_magnet($SITE.'/torrent_info.php?'.str_replace('id', 'wr_id', str_replace('b_id', 'bo_table', $view)))."</link></item>";
 			}
 			else {
-				$ret = $ret."<item><title>".$title."</title><link>http://".$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF']."?" . $view . "&sj_mode=d&sj_download_mode=".$sj_download_mode."</link><description></description><showrss:showid></showrss:showid><showrss:showname>".$title."</showrss:showname></item>";
+				$ret = $ret."<item><title>".$title."</title><link>http://".$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF']."?" . $view . "&sj_mode=d&sj_download_mode=".$sj_download_mode."</link></item>";
 			}
 		}
 		if ($sj_all_max != -1 && $count > $sj_all_max) break;
 	}
-	$ret = $ret."</channel></rss>";
+	
 	return $ret;
 }
 
@@ -186,14 +229,19 @@ function download() {
 	echo $data;
 }
 
-function download_magnet() {
+function redirect_magnet() {
+	$ret = get_magnet(null);
+	header('Location: '.$ret);
+}
+
+function get_magnet($url) {
 	global $SITE;
-	$url = $SITE.'/torrent_info.php?bo_table=' . $_GET["b_id"] . '&wr_id=' . $_GET["id"];
+	if ($url == null) $url = $SITE.'/torrent_info.php?bo_table=' . $_GET["b_id"] . '&wr_id=' . $_GET["id"];
 	$data = get_html($url,  array());
 	$tmp = explode('a href="magnet', $data);
 	$tmp = explode('"', $tmp[1]);
 	$ret = 'magnet'.$tmp[0];
-	header('Location: '.$ret);
+	return $ret;
 }
 
 function get_torrent() {
@@ -263,3 +311,4 @@ function endsWith($haystack, $needle)
     return (substr($haystack, -$length) === $needle);
 }
 ?>
+
