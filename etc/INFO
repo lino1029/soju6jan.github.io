@@ -1,0 +1,10 @@
+{ 
+"name": "sj_tf_tv",
+"displayname": "sj_tf_tv",
+"description": "sj_tf_tv",
+"version": "1.0",
+"site": "https://www.tfreeca22.com",
+"module": "search.php",
+"type": "search",
+"class": "sj_tf_tv"
+}

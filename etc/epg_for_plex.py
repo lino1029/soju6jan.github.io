@@ -18,24 +18,27 @@ def insert_image(root):
 		count += 1
 		title = item.find('title')
 		icon = item.find('icon')
-		search_text = title.text
-		patten = re.compile(r'\(.*?\)')
-		search_text = re.sub(patten, '', search_text).strip()
+		try:
+			search_text = title.text
+			patten = re.compile(r'\(.*?\)')
+			search_text = re.sub(patten, '', search_text).strip()
 
-		patten = re.compile(r'\[.*?\]')
-		search_text = re.sub(patten, '', search_text).strip()
+			patten = re.compile(r'\[.*?\]')
+			search_text = re.sub(patten, '', search_text).strip()
 
-		patten = re.compile(u'\s\d+회$')
-		search_text = re.sub(patten, '', search_text).strip()
+			patten = re.compile(u'\s\d+회$')
+			search_text = re.sub(patten, '', search_text).strip()
 
-		patten = re.compile(u'\s\d+화$')
-		search_text = re.sub(patten, '', search_text).strip()
+			patten = re.compile(u'\s\d+화$')
+			search_text = re.sub(patten, '', search_text).strip()
 
-		patten = re.compile(u'\s\d+부$')
-		search_text = re.sub(patten, '', search_text).strip()
+			patten = re.compile(u'\s\d+부$')
+			search_text = re.sub(patten, '', search_text).strip()
 
-		patten = re.compile(u'^재\s')
-		search_text = re.sub(patten, '', search_text).strip()
+			patten = re.compile(u'^재\s')
+			search_text = re.sub(patten, '', search_text).strip()
+		except:
+			pass
 		title.text = search_text
 		if icon is None:
 			try:
