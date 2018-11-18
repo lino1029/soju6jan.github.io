@@ -55,6 +55,9 @@
 
 	- sj_except_no_sub : on / off  생략시 off
 		on일경우 무자막으로 나와있는 게시물은 받지 않는다
+	
+	- sj_sub_to_tar  값: on / off	생략시:off
+		on일 경우 torrent, zip 파일이 아닌 파일은 tar로 압축해서 전송한다. (대부분 자막)
 
  3) sj_all=dummy 일때
 	sj_all=on인 경우 갱신 시 타임아웃 걸릴 가능성도 있고, 한꺼번에 게시물이 올라올 경우 놓칠 수도 있다. 
@@ -66,6 +69,8 @@
 	각 페이지 첫번째 마그넷을 리스트에 포함하여 반환한다. sj_download_mode=magnet은 첫번째 RSS 리스트에 이 페이지 주소가 들어간 후,
 	실제 다운로드 받을려고 다시 연결할 때 마그넷을 넘긴다.
 	sj_all=on_magnet 은 RSS 목록 요청시에 미리 마그넷 정보를 포함하는 방식이다
+ 
+
 
 
 각 방식의 차이가 있으니 선택적으로 사용하기 바라며, 이를 회피하기 위해서는 미리 주기적으로 xml 파일을 만들어 놓고 이 고정 파일을 등록해서 
@@ -138,6 +143,8 @@ function make_rss($url, $ret){
 	if ($sj_all_max == '') $sj_all_max = 20;
 	$sj_download_mode = $_GET["sj_download_mode"];
 	if ($sj_download_mode == '') $sj_download_mode = 'torrent';
+	$sj_sub_to_tar = $_GET["sj_sub_to_tar"];
+	if ($sj_sub_to_tar == '') $sj_sub_to_tar = 'off';
 
 	for($page = 1 ; $page <= $sj_page ; $page++) {
 		$url = $url.'&page='.$page;
@@ -147,6 +154,7 @@ function make_rss($url, $ret){
 		$count = 0;
 		for($i = 1; $i < count($data); $i++){
 			if ( $_GET["sj_except_no_sub"] == 'on' && strpos($data[$i], '무자막')) continue;
+			if ( $_GET["sj_except_no_sub"] == 'on' && strpos($data[$i], '영어')) continue;
 			if ( strpos($data[$i], 'stitle') ) $title = explode(" <",explode("class=\"stitle\"> ",$data[$i])[1])[0];
 			else $title = explode(" <",explode("class=\"\"> ",$data[$i])[1])[0]; 
 			$view = explode("\"",explode("<a href=\"board.php?mode=view&",$data[$i])[1])[0];
@@ -171,14 +179,14 @@ function make_rss($url, $ret){
 					$filename = substr($attachs[$x], strpos($attachs[$x], '>')+1, strpos($attachs[$x] , '<')-strpos($attachs[$x], '>')-1);
 					$l = explode("\"",$attachs[$x])[0];
 					if ( $filename != '' ) {
-						$ret = $ret."<item><title>".$filename."</title><link>http://".$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF']."?" . $view . "&sj_mode=d&sj_download_mode=".$sj_download_mode."&sj_filename=".$filename."&sj_filetender=".$l."</link></item>";
+						$ret = $ret."<item><title>".$filename."</title><link>http://".$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF']."?" . $view . "&sj_mode=d&sj_download_mode=".$sj_download_mode."&sj_filename=".$filename."&sj_filetender=".$l."&sj_sub_to_tar=".$sj_sub_to_tar."</link></item>";
 					}
 				}
 				$count++;
 				if ($sj_all_max != -1 && $count > $sj_all_max) break;
 			} else if ( $_GET["sj_all"] == 'dummy') {
 				for($idx = 0 ; $idx < 4 ; $idx++) {
-					$ret = $ret."<item><title>".$title."</title><link>http://".$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF']."?" . $view . "&sj_mode=d&sj_download_mode=".$sj_download_mode."&sj_idx=".$idx."</link></item>";
+					$ret = $ret."<item><title>".$title."</title><link>http://".$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF']."?" . $view . "&sj_mode=d&sj_download_mode=".$sj_download_mode."&sj_idx=".$idx."&sj_sub_to_tar=".$sj_sub_to_tar."</link></item>";
 				}
 			} else if ( $_GET["sj_all"] == 'on_magnet') {
 				$ret = $ret."<item><title>".$title."</title><link>".get_magnet($SITE.'/torrent_info.php?'.str_replace('id', 'wr_id', str_replace('b_id', 'bo_table', $view)))."</link></item>";
@@ -189,7 +197,6 @@ function make_rss($url, $ret){
 		}
 		if ($sj_all_max != -1 && $count > $sj_all_max) break;
 	}
-	
 	return $ret;
 }
 
@@ -206,8 +213,6 @@ function download() {
 		$sj_filename = $_GET["sj_filename"];
 		$sj_filetender= $_GET["sj_filetender"];
 	}
-	header("Content-Disposition: attachment; filename=\"".$sj_filename."\"");
-	header("Content-Type: application/octet-stream");
 	$url = $SITE.'/board.php?mode=view&b_id=' . $b_id . '&id=' . $id;
 	$url2 = "http://www.filetender.com".$sj_filetender;
 	$headers = array(
@@ -220,13 +225,23 @@ function download() {
 		'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36'
 	);
 	$data = get_html($url2,  $headers);
-
     //$url3 = 'http://www.filetender.com'.explode('"', explode('<a href="', explode('download_area', $data)[1])[1])[0];
 	$url3 = 'http://www.filetender.com/'.explode("'", explode("var newUrl = '", $data)[1])[0];
 	$query = 'key='.explode('"', explode('value="', explode('name="key"', $data)[1])[1])[0];
+	// 2018-11-17 table->table5. 또 변경될수 있으니 파싱하도록..
+	$table_idx = explode('"', explode('name="table', $data)[1])[0];
+	$query = $query.'&table'.$table_idx.'='.explode('"', explode('value="', explode('name="table', $data)[1])[1])[0];
 	$headers[0] = 'Referer: '.$url2;
 	$data = get_html2($url3,  $headers, $query);
-	echo $data;
+	
+	header("Content-Type: application/octet-stream");
+	if ($_GET["sj_sub_to_tar"] == 'on' && endsWith($sj_filename, ".torrent")==false && endsWith($sj_filename, ".zip")==false ) {
+		header("content-disposition: attachment; filename=\"".$sj_filename.".tar\"");
+		echo tarSection($sj_filename, $data);
+	} else {
+		header("Content-Disposition: attachment; filename=\"".$sj_filename."\"");
+		echo $data;
+	}
 }
 
 function redirect_magnet() {
@@ -310,5 +325,58 @@ function endsWith($haystack, $needle)
     }
     return (substr($haystack, -$length) === $needle);
 }
-?>
 
+#https://stackoverflow.com/questions/16506859/compress-on-the-fly-a-directory-in-tar-gz-format-using-php
+// Computes the unsigned Checksum of a file’s header
+// to try to ensure valid file
+// PRIVATE ACCESS FUNCTION
+function __computeUnsignedChecksum($bytestring) {
+  for($i=0; $i<512; $i++)
+    $unsigned_chksum += ord($bytestring[$i]);
+  for($i=0; $i<8; $i++)
+    $unsigned_chksum -= ord($bytestring[148 + $i]);
+  $unsigned_chksum += ord(" ") * 8;
+
+  return $unsigned_chksum;
+}
+
+// Generates a TAR file from the processed data
+// PRIVATE ACCESS FUNCTION
+function tarSection($Name, $Data, $information=NULL) {
+  // Generate the TAR header for this file
+
+  $header .= str_pad($Name,100,chr(0));
+  $header .= str_pad("777",7,"0",STR_PAD_LEFT) . chr(0);
+  $header .= str_pad(decoct($information["user_id"]),7,"0",STR_PAD_LEFT) . chr(0);
+  $header .= str_pad(decoct($information["group_id"]),7,"0",STR_PAD_LEFT) . chr(0);
+  $header .= str_pad(decoct(strlen($Data)),11,"0",STR_PAD_LEFT) . chr(0);
+  $header .= str_pad(decoct(time(0)),11,"0",STR_PAD_LEFT) . chr(0);
+  $header .= str_repeat(" ",8);
+  $header .= "0";
+  $header .= str_repeat(chr(0),100);
+  $header .= str_pad("ustar",6,chr(32));
+  $header .= chr(32) . chr(0);
+  $header .= str_pad($information["user_name"],32,chr(0));
+  $header .= str_pad($information["group_name"],32,chr(0));
+  $header .= str_repeat(chr(0),8);
+  $header .= str_repeat(chr(0),8);
+  $header .= str_repeat(chr(0),155);
+  $header .= str_repeat(chr(0),12);
+
+  // Compute header checksum
+  $checksum = str_pad(decoct(__computeUnsignedChecksum($header)),6,"0",STR_PAD_LEFT);
+  for($i=0; $i<6; $i++) {
+    $header[(148 + $i)] = substr($checksum,$i,1);
+  }
+  $header[154] = chr(0);
+  $header[155] = chr(32);
+
+  // Pad file contents to byte count divisible by 512
+  $file_contents = str_pad($Data,(ceil(strlen($Data) / 512) * 512),chr(0));
+
+  // Add new tar formatted data to tar file contents
+  $tar_file = $header . $file_contents;
+
+  return $tar_file;
+}
+?>
