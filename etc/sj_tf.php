@@ -1,9 +1,12 @@
 <?php
 /*
+https://www.clien.net/service/board/cm_nas/11579612
+
 <배경>
 고기상자님 코드를 바탕으로 자막 파일만 받는 것만 했었다.
 영화만 이 파일로 받고, 영화 이외에는 다른 분들이 업데이트해주시는 것으로 사용했으나
 사이트가 자꾸 변경되어 여러 개를 같이 고쳐야 하기에 이 파일로 티프리카 모두 적용하는 것으로 변경한다.
+
 
 
 <사용법>
@@ -70,9 +73,6 @@
 	실제 다운로드 받을려고 다시 연결할 때 마그넷을 넘긴다.
 	sj_all=on_magnet 은 RSS 목록 요청시에 미리 마그넷 정보를 포함하는 방식이다
  
-
-
-
 각 방식의 차이가 있으니 선택적으로 사용하기 바라며, 이를 회피하기 위해서는 미리 주기적으로 xml 파일을 만들어 놓고 이 고정 파일을 등록해서 
 사용하는 방법이 가장 좋겠으나, 스케줄러 세팅하는 것도 또 귀찮은 일이다.
 
@@ -85,6 +85,7 @@
 http://자신의서버주소/tfreeca/sj_tf.php?b_id=tmovie&sj_all=on&sj_all_movie_only_1080p=on
 http://자신의서버주소/tfreeca/sj_tf.php?b_id=tmovie&sj_all=on&sj_all_movie_only_1080p=on&sj_all_max=20
 http://자신의서버주소/tfreeca/sj_tf.php?b_id=tmovie&sj_all=dummy
+
 
 
 3. DLM
@@ -105,7 +106,6 @@ http://자신의서버주소/tfreeca/sj_tf.php?b_id=tmovie&sj_all=dummy
  3) 수정방법
   - info 파일에서 sj_tf_tv => sj_tf_my
   - search.php 파일에서 class 이름과 원하는 쿼리 변경
-
 */
 
 $SITE = 'http://www.tfreeca22.com';
@@ -232,8 +232,7 @@ function download() {
 	$table_idx = explode('"', explode('name="table', $data)[1])[0];
 	$query = $query.'&table'.$table_idx.'='.explode('"', explode('value="', explode('name="table', $data)[1])[1])[0];
 	$headers[0] = 'Referer: '.$url2;
-	$data = get_html2($url3,  $headers, $query);
-	
+	$data = get_html($url3,  $headers, $query);
 	header("Content-Type: application/octet-stream");
 	if ($_GET["sj_sub_to_tar"] == 'on' && endsWith($sj_filename, ".torrent")==false && endsWith($sj_filename, ".zip")==false ) {
 		header("content-disposition: attachment; filename=\"".$sj_filename.".tar\"");
@@ -281,7 +280,10 @@ function get_torrent() {
 	return null;
 }
 
-function get_html($url, $headers) {
+function get_html() {
+	$url = func_get_arg(0);
+	$headers = func_get_arg(1);
+	$query = (func_num_args() == 3) ? func_get_arg(2) : null;
 	$ch = curl_init();
 	curl_setopt($ch, CURLOPT_URL, $url);
 	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
@@ -291,22 +293,10 @@ function get_html($url, $headers) {
 	curl_setopt($ch, CURLOPT_HEADER, 0);
 	curl_setopt($ch, CURLOPT_COOKIEJAR, 'cookies.txt');
 	curl_setopt($ch, CURLOPT_COOKIEFILE, 'cookies.txt');
-	$data = curl_exec($ch);
-	return $data;
-}
-
-function get_html2($url, $headers, $query) {
-	$ch = curl_init();
-	curl_setopt($ch, CURLOPT_URL, $url);
-	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
-	curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-	curl_setopt($ch, CURLOPT_HEADER, 0);
-	curl_setopt($ch, CURLOPT_COOKIEJAR, 'cookies.txt');
-	curl_setopt($ch, CURLOPT_COOKIEFILE, 'cookies.txt');
-	curl_setopt($ch, CURLOPT_POST, 1);
-	curl_setopt($ch, CURLOPT_POSTFIELDS, $query);
+	if ( $query != null) {
+		curl_setopt($ch, CURLOPT_POST, 1);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $query);
+	}
 	$data = curl_exec($ch);
 	return $data;
 }
