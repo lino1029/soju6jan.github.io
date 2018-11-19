@@ -225,13 +225,20 @@ function download() {
 		'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36'
 	);
 	$data = get_html($url2,  $headers);
-    //$url3 = 'http://www.filetender.com'.explode('"', explode('<a href="', explode('download_area', $data)[1])[1])[0];
 	$url3 = 'http://www.filetender.com/'.explode("'", explode("var newUrl = '", $data)[1])[0];
 	$query = 'key='.explode('"', explode('value="', explode('name="key"', $data)[1])[1])[0];
+	
 	// 2018-11-17 table->table5. 또 변경될수 있으니 파싱하도록..
 	$table_idx = explode('"', explode('name="table', $data)[1])[0];
 	$query = $query.'&table'.$table_idx.'='.explode('"', explode('value="', explode('name="table', $data)[1])[1])[0];
 	$headers[0] = 'Referer: '.$url2;
+
+	// 2018-11-18 post -> get.
+	$method = explode('"', explode('form method="', $data)[1])[0];
+	if (!strcmp($method, 'get')) {
+		$url3 = $url3.'?'.$query;
+		$query = null;
+	}
 	$data = get_html($url3,  $headers, $query);
 	header("Content-Type: application/octet-stream");
 	if ($_GET["sj_sub_to_tar"] == 'on' && endsWith($sj_filename, ".torrent")==false && endsWith($sj_filename, ".zip")==false ) {
