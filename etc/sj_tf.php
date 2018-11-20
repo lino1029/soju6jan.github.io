@@ -108,7 +108,58 @@ http://자신의서버주소/tfreeca/sj_tf.php?b_id=tmovie&sj_all=dummy
   - search.php 파일에서 class 이름과 원하는 쿼리 변경
 */
 
-$SITE = 'http://www.tfreeca22.com';
+class Tfreeca {
+	public $filetender = 'http://www.filetender.com';
+	public $listurl = 'http://www.tfreeca22.com/board.php?mode=list';
+	public $viewurl = 'http://www.tfreeca22.com/board.php?mode=view';
+	public $param = '&sj_site=tf';
+
+	public function parse($data) {
+		$data = str_replace("</span>","",str_replace("<span class='sc_font'>","",str_replace("stitle1","stitle",str_replace("stitle2","stitle",str_replace("stitle3","stitle",str_replace("stitle4","stitle",str_replace("stitle5","stitle",str_replace("<tr class=\"bgcolor\">","<tr >",$data))))))));
+		$data = explode("<tr >", $data);
+		$ret = array();
+		for($i = 1; $i < count($data); $i++){
+			$info = array();
+			$info[] = explode("\"",explode("<a href=\"board.php?mode=view&",$data[$i])[1])[0];
+			if ( strpos($data[$i], 'stitle') ) $title = explode(" <",explode("class=\"stitle\"> ",$data[$i])[1])[0];
+			else $title = explode(" <",explode("class=\"\"> ",$data[$i])[1])[0]; 
+			$info[] = $title;
+			$info[] = $data[$i];
+			$ret[] = $info;
+		}
+		return $ret;
+	}
+}
+
+class Torrentmi {
+	public $filetender = 'https://www.filetender.net';
+	public $listurl = 'https://www.torrentmi.com/list.php?';
+	public $viewurl = 'https://www.torrentmi.com/view.php?';
+	public $param = '&sj_site=tm';
+	private $xpath_query = '//*[@id="contents"]/div[2]/div[3]/div[2]/table/tbody/tr';
+
+	public function parse($data) {
+		$doc = new DOMDocument();
+		libxml_use_internal_errors(true);
+		$doc->loadHTML($data);
+		libxml_clear_errors();
+		$xpath = new DOMXPath($doc);
+		$entries = $xpath->query($this->xpath_query);
+		$ret = array();
+		foreach ($entries as $entry) {
+			$info = array();
+			$a_tag = $entry->firstChild->nextSibling->nextSibling->firstChild;
+			$info[] = explode('?', $a_tag->getAttribute('href'))[1]; 
+			$info[] = trim($a_tag->firstChild->nextSibling->nodeValue);
+			$info[] = $entry->textContent;
+			$ret[] = $info;
+		}
+		return $ret;
+	}
+}
+
+$SITE = ( $_GET['sj_site'] == 'tm' ) ? new Torrentmi() : new Tfreeca();
+
 $m = $_GET["sj_mode"];
 if ( $m == 'd' ) {
 	if ($_GET["sj_download_mode"] == 'magnet') redirect_magnet();
@@ -117,16 +168,15 @@ if ( $m == 'd' ) {
 	global $SITE;
 	$query = '';
 	foreach($_GET as $key => $value) if (startsWith($key, 'sj_') == false) $query = $query.'&'.$key.'='.$value;
-
 	$ret = "<rss xmlns:showrss=\"http://showrss.info/\" version=\"2.0\"><channel><title>".$_GET["b_id"].' '.$_GET["sc"]."</title><description>sj_tf</description>";
 	if ($_GET["b_id"] == null) {
 		$board_list = array('tdrama', 'tent', 'tv');
 		foreach($board_list as $b_id) {
-			$url = $SITE.'/board.php?mode=list'.$query.'&b_id='.$b_id;
+			$url = $SITE->listurl.$query.'&b_id='.$b_id;
 			$ret = make_rss($url, $ret);
 		}
 	} else {
-		$url = $SITE.'/board.php?mode=list'.$query;
+		$url = $SITE->listurl.$query;
 		$ret = make_rss($url, $ret);
 	}
 	$ret = $ret."</channel></rss>";
@@ -149,19 +199,17 @@ function make_rss($url, $ret){
 	for($page = 1 ; $page <= $sj_page ; $page++) {
 		$url = $url.'&page='.$page;
 		$data = get_html($url, $headers);
-		$data = str_replace("</span>","",str_replace("<span class='sc_font'>","",str_replace("stitle1","stitle",str_replace("stitle2","stitle",str_replace("stitle3","stitle",str_replace("stitle4","stitle",str_replace("stitle5","stitle",str_replace("<tr class=\"bgcolor\">","<tr >",$data))))))));
-		$data = explode("<tr >", $data);
+		$list = $SITE->parse($data);
 		$count = 0;
-		for($i = 1; $i < count($data); $i++){
-			if ( $_GET["sj_except_no_sub"] == 'on' && strpos($data[$i], '무자막')) continue;
-			if ( $_GET["sj_except_no_sub"] == 'on' && strpos($data[$i], '영어')) continue;
-			if ( strpos($data[$i], 'stitle') ) $title = explode(" <",explode("class=\"stitle\"> ",$data[$i])[1])[0];
-			else $title = explode(" <",explode("class=\"\"> ",$data[$i])[1])[0]; 
-			$view = explode("\"",explode("<a href=\"board.php?mode=view&",$data[$i])[1])[0];
+		foreach ($list as $item) {
+			$view = $item[0];
+			$title = $item[1];
+			if ( $_GET["sj_except_no_sub"] == 'on' && strpos($item[2], '무자막')) continue;
+			if ( $_GET["sj_except_no_sub"] == 'on' && strpos($item[2], '영어')) continue;
 			if ( $_GET["sj_all"] == 'on') {
-				$url = $SITE.'/board.php?mode=view&'.$view;
+				$url = $SITE->viewurl.$view;
 				$data2 = get_html($url, $headers);
-				$attachs = explode("http://www.filetender.com", $data2);
+				$attachs = explode($SITE->filetender, $data2);
 				if ( $_GET['sj_all_movie_only_1080p'] == 'on') {
 					// TODO 이쁘게
 					$flag_1080p = false;
@@ -179,20 +227,20 @@ function make_rss($url, $ret){
 					$filename = substr($attachs[$x], strpos($attachs[$x], '>')+1, strpos($attachs[$x] , '<')-strpos($attachs[$x], '>')-1);
 					$l = explode("\"",$attachs[$x])[0];
 					if ( $filename != '' ) {
-						$ret = $ret."<item><title>".$filename."</title><link>http://".$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF']."?" . $view . "&sj_mode=d&sj_download_mode=".$sj_download_mode."&sj_filename=".$filename."&sj_filetender=".$l."&sj_sub_to_tar=".$sj_sub_to_tar."</link></item>";
+						$ret = $ret."<item><title>".$filename."</title><link>http://".$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF']."?" . $view . "&sj_mode=d&sj_download_mode=".$sj_download_mode."&sj_filename=".$filename."&sj_sub_to_tar=".$sj_sub_to_tar.$SITE->param."&sj_filetender=".$l."</link></item>";
 					}
 				}
 				$count++;
 				if ($sj_all_max != -1 && $count > $sj_all_max) break;
 			} else if ( $_GET["sj_all"] == 'dummy') {
 				for($idx = 0 ; $idx < 4 ; $idx++) {
-					$ret = $ret."<item><title>".$title."</title><link>http://".$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF']."?" . $view . "&sj_mode=d&sj_download_mode=".$sj_download_mode."&sj_idx=".$idx."&sj_sub_to_tar=".$sj_sub_to_tar."</link></item>";
+					$ret = $ret."<item><title>".$title."</title><link>http://".$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF']."?" . $view . "&sj_mode=d&sj_download_mode=".$sj_download_mode."&sj_idx=".$idx."&sj_sub_to_tar=".$sj_sub_to_tar.$SITE->param."</link></item>";
 				}
 			} else if ( $_GET["sj_all"] == 'on_magnet') {
-				$ret = $ret."<item><title>".$title."</title><link>".get_magnet($SITE.'/torrent_info.php?'.str_replace('id', 'wr_id', str_replace('b_id', 'bo_table', $view)))."</link></item>";
+				$ret = $ret."<item><title>".$title."</title><link>".get_magnet('/torrent_info.php?'.str_replace('id', 'wr_id', str_replace('b_id', 'bo_table', $view)))."</link></item>";
 			}
 			else {
-				$ret = $ret."<item><title>".$title."</title><link>http://".$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF']."?" . $view . "&sj_mode=d&sj_download_mode=".$sj_download_mode."</link></item>";
+				$ret = $ret."<item><title>".$title."</title><link>http://".$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF']."?" . $view . "&sj_mode=d&sj_download_mode=".$sj_download_mode.$SITE->param."</link></item>";
 			}
 		}
 		if ($sj_all_max != -1 && $count > $sj_all_max) break;
@@ -213,8 +261,8 @@ function download() {
 		$sj_filename = $_GET["sj_filename"];
 		$sj_filetender= $_GET["sj_filetender"];
 	}
-	$url = $SITE.'/board.php?mode=view&b_id=' . $b_id . '&id=' . $id;
-	$url2 = "http://www.filetender.com".$sj_filetender;
+	$url = $SITE->viewurl.'b_id=' . $b_id . '&id=' . $id;
+	$url2 = $SITE->filetender.$sj_filetender;
 	$headers = array(
 		'Referer: '.$url,
 		'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
@@ -225,13 +273,15 @@ function download() {
 		'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36'
 	);
 	$data = get_html($url2,  $headers);
-	$url3 = 'http://www.filetender.com/'.explode("'", explode("var newUrl = '", $data)[1])[0];
-	$query = 'key='.explode('"', explode('value="', explode('name="key"', $data)[1])[1])[0];
-	
-	// 2018-11-17 table->table5. 또 변경될수 있으니 파싱하도록..
-	$table_idx = explode('"', explode('name="table', $data)[1])[0];
-	$query = $query.'&table'.$table_idx.'='.explode('"', explode('value="', explode('name="table', $data)[1])[1])[0];
+	$url3 = $SITE->filetender.'/'.explode("'", explode("var newUrl = '", $data)[1])[0];
 	$headers[0] = 'Referer: '.$url2;
+	// 2018-11-20
+	$count = preg_match_all('/input\s+type\=\".*?\"\s+name\=\"(?P<name>.*?)\"\s+value\=\"(?P<value>.*?)\"/', $data, $match);
+	$query = '';
+	for($i = 0; $i < $count; $i++){
+		if ( $i != 0 ) $query = $query.'&';
+		$query = $query.$match[name][$i].'='.$match[value][$i];
+	}
 
 	// 2018-11-18 post -> get.
 	$method = explode('"', explode('form method="', $data)[1])[0];
@@ -256,8 +306,9 @@ function redirect_magnet() {
 }
 
 function get_magnet($url) {
-	global $SITE;
-	if ($url == null) $url = $SITE.'/torrent_info.php?bo_table=' . $_GET["b_id"] . '&wr_id=' . $_GET["id"];
+	$site = 'http://www.tfreeca22.com';
+	if ($url == null) $url = $site.'/torrent_info.php?bo_table=' . $_GET["b_id"] . '&wr_id=' . $_GET["id"];
+	else $url = $site.$url;
 	$data = get_html($url,  array());
 	$tmp = explode('a href="magnet', $data);
 	$tmp = explode('"', $tmp[1]);
@@ -271,10 +322,10 @@ function get_torrent() {
 	$id = $_GET["id"];
 	$sj_idx = $_GET["sj_idx"];
 	if ($sj_idx == '') $sj_idx = 0;
-	$url = $SITE.'/board.php?mode=view&b_id='.$b_id.'&id='.$id;
+	$url = $SITE->viewurl.'b_id='.$b_id.'&id='.$id;
 	$headers[] = 'Cookie: uuoobe=on;';
 	$data2 = get_html($url, $headers);
-	$attachs = explode("http://www.filetender.com", $data2);
+	$attachs = explode($SITE->filetender, $data2);
 	$idx = -1;
 	for($x = 1 ; $x < count($attachs) ; $x++) {
 		$filename = substr($attachs[$x], strpos($attachs[$x], '>')+1, strpos($attachs[$x] , '<')-strpos($attachs[$x], '>')-1);
@@ -308,14 +359,12 @@ function get_html() {
 	return $data;
 }
 
-function startsWith($haystack, $needle)
-{
+function startsWith($haystack, $needle) {
      $length = strlen($needle);
      return (substr($haystack, 0, $length) === $needle);
 }
 
-function endsWith($haystack, $needle)
-{
+function endsWith($haystack, $needle) {
     $length = strlen($needle);
     if ($length == 0) {
         return true;
