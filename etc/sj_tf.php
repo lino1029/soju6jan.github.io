@@ -110,8 +110,8 @@ http://자신의서버주소/tfreeca/sj_tf.php?b_id=tmovie&sj_all=dummy
 
 class Tfreeca {
 	public $filetender = 'http://www.filetender.com';
-	public $listurl = 'http://www.tfreeca22.com/board.php?mode=list';
-	public $viewurl = 'http://www.tfreeca22.com/board.php?mode=view';
+	public $listurl = 'http://www.tfreeca22.com/board.php?mode=list&';
+	public $viewurl = 'http://www.tfreeca22.com/board.php?mode=view&';
 	public $param = '&sj_site=tf';
 
 	public function parse($data) {
