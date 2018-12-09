@@ -132,7 +132,7 @@ class Tfreeca {
 }
 
 class Torrentmi {
-	public $filetender = 'https://www.filetender.net';
+	public $filetender = 'https://www.filetender.com';
 	public $listurl = 'https://www.torrentmi.com/list.php?';
 	public $viewurl = 'https://www.torrentmi.com/view.php?';
 	public $param = '&sj_site=tm';
