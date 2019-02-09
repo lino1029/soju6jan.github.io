@@ -112,6 +112,7 @@ class Tfreeca {
 	public $filetender = 'http://www.filetender.com';
 	public $listurl = 'http://www.tfreeca22.com/board.php?mode=list&';
 	public $viewurl = 'http://www.tfreeca22.com/board.php?mode=view&';
+	public $magneturl = 'http://www.tfreeca22.com/torrent_info.php?';
 	public $param = '&sj_site=tf';
 
 	public function parse($data) {
@@ -135,6 +136,7 @@ class Torrentmi {
 	public $filetender = 'https://www.filetender.com';
 	public $listurl = 'https://www.torrentmi.com/list.php?';
 	public $viewurl = 'https://www.torrentmi.com/view.php?';
+	public $magneturl = 'http://img.torrentmi.com/info.php?';
 	public $param = '&sj_site=tm';
 	private $xpath_query = '//*[@id="contents"]/div[2]/div[3]/div[2]/table/tbody/tr';
 
@@ -237,7 +239,11 @@ function make_rss($url, $ret){
 					$ret = $ret."<item><title>".$title."</title><link>http://".$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF']."?" . $view . "&sj_mode=d&sj_download_mode=".$sj_download_mode."&sj_idx=".$idx."&sj_sub_to_tar=".$sj_sub_to_tar.$SITE->param."</link></item>";
 				}
 			} else if ( $_GET["sj_all"] == 'on_magnet') {
-				$ret = $ret."<item><title>".$title."</title><link>".get_magnet('/torrent_info.php?'.str_replace('id', 'wr_id', str_replace('b_id', 'bo_table', $view)))."</link></item>";
+				$count = preg_match('/(^|\?|\&)b_id\=(?P<bo_table>.*?)($|&)/', $view, $match);
+				if ( $count == 1) $bo_table = $match[bo_table];
+				$count = preg_match('/(^|\?|\&)id\=(?P<wr_id>.*?)($|&)/', $view, $match);
+				if ( $count == 1) $wr_id = $match[wr_id];
+				$ret = $ret."<item><title>".$title."</title><link>".get_magnet($bo_table, $wr_id)."</link></item>";
 			}
 			else {
 				$ret = $ret."<item><title>".$title."</title><link>http://".$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF']."?" . $view . "&sj_mode=d&sj_download_mode=".$sj_download_mode.$SITE->param."</link></item>";
@@ -301,14 +307,17 @@ function download() {
 }
 
 function redirect_magnet() {
-	$ret = get_magnet(null);
+	$ret = get_magnet();
 	header('Location: '.$ret);
 }
 
-function get_magnet($url) {
-	$site = 'http://www.tfreeca22.com';
-	if ($url == null) $url = $site.'/torrent_info.php?bo_table=' . $_GET["b_id"] . '&wr_id=' . $_GET["id"];
-	else $url = $site.$url;
+function get_magnet($bo_table=null, $wr_id=null) {
+	global $SITE;
+	if ($bo_table == null) {
+		$bo_table = $_GET["b_id"];
+		$wr_id = $_GET["id"];
+	}
+	$url = $SITE->magneturl.'bo_table=' . $bo_table . '&wr_id=' . $wr_id;
 	$data = get_html($url,  array());
 	$tmp = explode('a href="magnet', $data);
 	$tmp = explode('"', $tmp[1]);
