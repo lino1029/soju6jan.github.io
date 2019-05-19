@@ -279,8 +279,9 @@ function download() {
 		'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36'
 	);
 	$data = get_html($url2,  $headers);
-	$url3 = $SITE->filetender.'/'.explode("'", explode("var newUrl = '", $data)[1])[0];
+	$url3 = explode("'", explode("var newUrl = '", $data)[1])[0];
 	$headers[0] = 'Referer: '.$url2;
+	$headers[4] = 'Referer: '.'file.filetender.com';
 	// 2018-11-20
 	$count = preg_match_all('/input\s+type\=\".*?\"\s+name\=\"(?P<name>.*?)\"\s+value\=\"(?P<value>.*?)\"/', $data, $match);
 	$query = '';
